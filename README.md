@@ -1,8 +1,9 @@
 # swiss_pairing_tournament
 create a swiss pairing tournament utilizing PostgreSQL, and the psycopg2 package in Python.
 
-Use the tournament.sql file to set up the database
+While using PostgreSQL in the CLI (Command Line Interface), initialize the tournament database by running: \i tournament.sql
 
-The functions in the tournament.py file are all that are needed to track a swiss-pairing tournament
+From the command line, run tournament_test.py using: python tournament_test.py
+to check that the tournament.py file is working properly.
 
-The tournament_test.py file was used to check that all the functions were working properly.
+Use the functions in tournament.py to set up your own tournament!
