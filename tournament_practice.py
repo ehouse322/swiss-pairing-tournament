@@ -5,6 +5,6 @@ import psycopg2
 # tournament.deletePlayers()
 #print(tournament.countPlayers())
 #tournament.registerPlayer('Jason')
-#tournament.playerStandings()
+tournament.playerStandings()
 # tournament.reportMatch(1, 2)
-tournament.swissPairings()
+#tournament.swissPairings()

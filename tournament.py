@@ -14,8 +14,8 @@ def deleteMatches():
     """Remove all the match records from the database."""
     conn = connect()
     cur = conn.cursor()
-    cur.execute("UPDATE matches SET wins = 0, losses = 0, match_total = 0, match_points = 0")
-    #cur.execute("TRUNCATE matches")
+    #cur.execute("UPDATE players SET wins = 0, losses = 0, match_total = 0")
+    cur.execute("TRUNCATE matches")
     conn.commit()
 
 def deletePlayers():
@@ -45,15 +45,13 @@ def registerPlayer(name_var):
     conn = connect()
     cur = conn.cursor()
     cur.execute("INSERT INTO players (names) VALUES (%s)", (name_var,))
-    cur.execute("INSERT INTO matches (wins, losses, match_total, match_points) VALUES (0, 0, 0, 0)")
+    # cur.execute("INSERT INTO matches (wins, losses, match_total) VALUES (0, 0, 0)")
     conn.commit()
 
 def playerStandings():
     """Returns a list of the players and their win records, sorted by wins.
-
     The first entry in the list should be the player in first place, or a player
     tied for first place if there is currently a tie.
-
     Returns:
       A list of tuples, each of which contains (id, name, wins, matches):
         id: the player's unique id (assigned by the database)
@@ -63,20 +61,22 @@ def playerStandings():
     """
     conn = connect()
     cur = conn.cursor()
-    cur.execute("SELECT players.id, players.names, matches.wins, matches.match_total FROM players JOIN matches ON (players.id = matches.id) ORDER BY matches.wins desc")
-    return cur.fetchall()
+    cur.execute("CREATE VIEW myview AS SELECT players.id, players.names, count(matches.winner) as wins FROM players LEFT JOIN matches ON players.id = matches.winner GROUP BY players.id ORDER BY wins desc;")
+    cur.execute("CREATE VIEW myview2 AS SELECT players.id, players.names, count(matches.loser) as losses FROM players LEFT JOIN matches ON players.id = matches.loser GROUP BY players.id ORDER BY losses;")
+    cur.execute("SELECT myview.id, myview.names, myview.wins, myview2.losses + myview.wins FROM myview JOIN myview2 ON myview.id = myview2.id ORDER BY losses;")
+    standings = cur.fetchall()
+    return standings
 
 def reportMatch(winner, loser):
     """Records the outcome of a single match between two players.
-
     Args:
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
     conn = connect()
     cur = conn.cursor()
-    cur.execute("UPDATE matches SET wins = wins + 1, match_total = match_total + 1, match_points = match_points + 3 WHERE id = (%s)", (winner,))
-    cur.execute("UPDATE matches SET losses = losses + 1, match_total = match_total + 1 WHERE id = (%s)", (loser,))
+    cur.execute("INSERT INTO matches (winner, loser) VALUES (%s, %s)", (winner, loser,))
+    #cur.execute("UPDATE players SET losses = losses + 1, match_total = match_total + 1 WHERE id = (%s)", (loser,))
     conn.commit()
  
 def swissPairings():
@@ -96,13 +96,13 @@ def swissPairings():
     """
     conn = connect()
     cur = conn.cursor()
-    cur.execute("SELECT players.id, players.names, matches.wins, matches.losses, matches.match_total FROM players JOIN matches ON (players.id = matches.id) ORDER BY matches.wins desc")
+    cur.execute("CREATE VIEW myview AS SELECT players.id, players.names, count(matches.winner) as wins FROM players LEFT JOIN matches ON players.id = matches.winner GROUP BY players.id ORDER BY wins desc;")
+    cur.execute("CREATE VIEW myview2 AS SELECT players.id, players.names, count(matches.loser) as losses FROM players LEFT JOIN matches ON players.id = matches.loser GROUP BY players.id ORDER BY losses;")
+    cur.execute("SELECT players.id, players.names, myview.wins, myview2.losses FROM players JOIN myview ON players.id = myview.id JOIN myview2 ON myview.id = myview2.id ORDER BY myview.wins desc")
     db_info = cur.fetchall()
     player_count = len(db_info)
     swiss_pairs = []
     for i in range(0, player_count , 2):
         swiss_pairs.append((db_info[i][0], db_info[i][1], db_info[i+1][0], db_info[i+1][1]))
+    #print(swiss_pairs)
     return swiss_pairs
-
-
-
